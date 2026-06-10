@@ -14,8 +14,12 @@ export type SessionSummary = {
   customer_id: string;
   transaction_rows: number;
   invoice_count: number;
+  purchase_invoice_count: number;
+  cancellation_invoice_count: number;
   total_spend: number;
 };
+
+export type TransactionType = "purchase" | "cancel";
 
 export type CheckoutResponse = {
   customer_id: string;
@@ -24,6 +28,8 @@ export type CheckoutResponse = {
   checkout: {
     items: number;
     subtotal: number;
+    transaction_type: TransactionType | null;
+    transaction_date: string | null;
   };
   segment: {
     cluster: number;
@@ -41,6 +47,8 @@ export type CheckoutResponse = {
     description: string;
     quantity: number;
     unit_price: number;
+    invoice_date: string;
+    transaction_type: TransactionType;
   }>;
   note: string;
 };
@@ -144,12 +152,20 @@ export async function resetSession(customerId?: string) {
   });
 }
 
-export async function checkout(customerId: string | null, items: CartItem[], simulationMode = "first_time") {
+export async function checkout(
+  customerId: string | null,
+  items: CartItem[],
+  simulationMode = "first_time",
+  transactionType: TransactionType = "purchase",
+  transactionDate?: string,
+) {
   return request<CheckoutResponse>("/api/checkout", {
     method: "POST",
     body: JSON.stringify({
       customer_id: customerId,
       simulation_mode: simulationMode,
+      transaction_type: transactionType,
+      transaction_date: transactionDate || undefined,
       items: items.map((item) => ({
         product_id: item.product_id,
         quantity: item.quantity,
