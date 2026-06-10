@@ -7,8 +7,9 @@ Run:
 from __future__ import annotations
 
 import uuid
+from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException
@@ -61,6 +62,8 @@ class CheckoutRequest(BaseModel):
     customer_id: str | None = None
     items: list[CheckoutItem] = Field(min_length=1)
     simulation_mode: str = "first_time"
+    transaction_type: Literal["purchase", "cancel"] = "purchase"
+    transaction_date: date | None = None
 
 
 class ResetRequest(BaseModel):
@@ -107,10 +110,14 @@ def _session_summary(customer_id: str) -> dict[str, Any]:
     rows = sessions.get(customer_id, [])
     total = sum(float(row["Quantity"]) * float(row["UnitPrice"]) for row in rows if int(row["Quantity"]) > 0)
     invoices = {row["InvoiceNo"] for row in rows}
+    purchase_invoices = {row["InvoiceNo"] for row in rows if int(row["Quantity"]) > 0}
+    cancellation_invoices = {row["InvoiceNo"] for row in rows if int(row["Quantity"]) < 0}
     return {
         "customer_id": customer_id,
         "transaction_rows": len(rows),
         "invoice_count": len(invoices),
+        "purchase_invoice_count": len(purchase_invoices),
+        "cancellation_invoice_count": len(cancellation_invoices),
         "total_spend": round(total, 2),
     }
 
@@ -211,6 +218,8 @@ def _build_segment_response(customer_id: str, invoice_no: str | None = None, che
         "checkout": checkout_info or {
             "items": 0,
             "subtotal": 0,
+            "transaction_type": None,
+            "transaction_date": None,
         },
         "segment": {
             **prediction,
@@ -225,6 +234,8 @@ def _build_segment_response(customer_id: str, invoice_no: str | None = None, che
                 "description": row["Description"],
                 "quantity": int(row["Quantity"]),
                 "unit_price": round(float(row["UnitPrice"]), 2),
+                "invoice_date": pd.Timestamp(row["InvoiceDate"]).isoformat(),
+                "transaction_type": "cancel" if int(row["Quantity"]) < 0 else "purchase",
             }
             for row in rows[-20:]
         ],
@@ -355,9 +366,30 @@ def checkout(payload: CheckoutRequest) -> dict[str, Any]:
     if missing:
         raise HTTPException(status_code=400, detail=f"Unknown product_id: {', '.join(missing)}")
 
-    now = pd.Timestamp.utcnow().tz_localize(None)
-    _seed_history(customer_id, product_df, now, payload.simulation_mode)
-    invoice_no = f"SIM-{now.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:4].upper()}"
+    now = pd.Timestamp.now().tz_localize(None)
+    transaction_date = pd.Timestamp(payload.transaction_date or now.date())
+    if transaction_date.normalize() > now.normalize():
+        raise HTTPException(status_code=422, detail="Tanggal transaksi tidak boleh berada di masa depan.")
+
+    _seed_history(customer_id, product_df, transaction_date, payload.simulation_mode)
+
+    if payload.transaction_type == "cancel":
+        existing = pd.DataFrame(sessions[customer_id])
+        if existing.empty:
+            raise HTTPException(status_code=422, detail="Cancel hanya dapat dibuat setelah customer memiliki pembelian valid.")
+        existing_valid, _ = clean_transactions(existing)
+        if existing_valid.empty:
+            raise HTTPException(status_code=422, detail="Cancel hanya dapat dibuat setelah customer memiliki pembelian valid.")
+        first_purchase_date = existing_valid["InvoiceDate"].min().normalize()
+        if transaction_date.normalize() < first_purchase_date:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Tanggal cancel tidak boleh sebelum pembelian pertama ({first_purchase_date.date().isoformat()}).",
+            )
+
+    invoice_prefix = "C-SIM" if payload.transaction_type == "cancel" else "SIM"
+    invoice_no = f"{invoice_prefix}-{transaction_date.strftime('%Y%m%d')}-{uuid.uuid4().hex[:4].upper()}"
+    quantity_sign = -1 if payload.transaction_type == "cancel" else 1
     new_rows = []
     for item in payload.items:
         product = product_lookup.loc[item.product_id]
@@ -366,8 +398,8 @@ def checkout(payload: CheckoutRequest) -> dict[str, Any]:
                 "InvoiceNo": invoice_no,
                 "StockCode": str(product["StockCode"]),
                 "Description": str(product["Description"]),
-                "Quantity": int(item.quantity),
-                "InvoiceDate": now,
+                "Quantity": int(item.quantity) * quantity_sign,
+                "InvoiceDate": transaction_date,
                 "UnitPrice": float(product["UnitPrice"]),
                 "CustomerID": customer_id,
                 "Country": "United Kingdom",
@@ -379,6 +411,8 @@ def checkout(payload: CheckoutRequest) -> dict[str, Any]:
         invoice_no=invoice_no,
         checkout_info={
             "items": len(payload.items),
-            "subtotal": round(sum(row["Quantity"] * row["UnitPrice"] for row in new_rows), 2),
+            "subtotal": round(sum(abs(row["Quantity"]) * row["UnitPrice"] for row in new_rows), 2),
+            "transaction_type": payload.transaction_type,
+            "transaction_date": transaction_date.date().isoformat(),
         },
     )
