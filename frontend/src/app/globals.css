@@ -39,7 +39,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -406,6 +407,37 @@ input:focus-visible {
   color: var(--color-muted);
 }
 
+.history-row > div {
+  display: grid;
+  gap: 5px;
+}
+
+.history-row > div span {
+  margin: 0;
+}
+
+.history-meta {
+  justify-items: start;
+}
+
+.transaction-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+}
+
+.transaction-badge.purchase {
+  background: rgba(31, 111, 76, 0.1);
+  color: #1f6f4c;
+}
+
+.transaction-badge.cancel {
+  background: rgba(159, 48, 48, 0.1);
+  color: var(--color-danger);
+}
+
 .quantity-stepper {
   display: flex;
   align-items: center;
@@ -468,6 +500,69 @@ input:focus-visible {
   color: var(--color-muted);
   font-size: 14px;
   line-height: 1.45;
+}
+
+.checkout-field {
+  display: grid;
+  gap: 8px;
+}
+
+.checkout-field > span,
+.checkout-field > small {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.segmented-control {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-tint-soft);
+}
+
+.segmented-control button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.segmented-control button.active {
+  background: var(--color-charcoal);
+  color: var(--color-offwhite);
+  box-shadow: var(--shadow-inset);
+}
+
+.segmented-control button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.date-input {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 9px;
+  padding: 0 11px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  background: var(--color-cream);
+}
+
+.date-input input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-charcoal);
 }
 
 .empty-state {
