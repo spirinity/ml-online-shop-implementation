@@ -1,0 +1,9 @@
+# FastAPI backend for the Next.js frontend.
+# Install with: pip install -r requirements_api.txt
+
+fastapi>=0.116.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.0.0
+
+# Reuse the ML stack from requirements_app.txt.
+-r requirements_app.txt

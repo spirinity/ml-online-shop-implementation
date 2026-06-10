@@ -1,0 +1,9 @@
+# Customer Segmentation Online Shop - ML dependencies
+# Install with: pip install -r requirements_app.txt
+
+numpy
+pandas
+openpyxl
+scikit-learn
+joblib
+ucimlrepo
