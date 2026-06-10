@@ -10,6 +10,14 @@ function currency(value: number) {
   return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(value);
 }
 
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
 function explainSegment(result: CheckoutResponse) {
   const entries = Object.entries(result.features)
     .map(([key, feature]) => ({ key, ...feature }))
@@ -66,12 +74,12 @@ export default function SegmentPage() {
 
           <div className="metric-strip">
             <div>
-              <span>Invoice</span>
-              <strong>{result.summary.invoice_count}</strong>
+              <span>Purchases</span>
+              <strong>{result.summary.purchase_invoice_count ?? result.summary.invoice_count}</strong>
             </div>
             <div>
-              <span>Transaction rows</span>
-              <strong>{result.summary.transaction_rows}</strong>
+              <span>Cancellations</span>
+              <strong>{result.summary.cancellation_invoice_count ?? 0}</strong>
             </div>
             <div>
               <span>Total spend</span>
@@ -129,9 +137,19 @@ export default function SegmentPage() {
             <div className="history-table">
               {result.history.map((item, index) => (
                 <div className="history-row" key={`${item.invoice_no}-${item.stock_code}-${index}`}>
-                  <span>{item.invoice_no}</span>
-                  <strong>{item.description}</strong>
-                  <span>{item.quantity} x {currency(item.unit_price)}</span>
+                  <div className="history-meta">
+                    <span className={`transaction-badge ${item.transaction_type}`}>
+                      {item.transaction_type === "cancel" ? "Cancel" : "Purchase"}
+                    </span>
+                    <span>{item.invoice_date ? formatDate(item.invoice_date) : item.invoice_no}</span>
+                  </div>
+                  <div>
+                    <strong>{item.description}</strong>
+                    <span>{item.invoice_no}</span>
+                  </div>
+                  <span>
+                    {Math.abs(item.quantity)} x {currency(item.unit_price)}
+                  </span>
                 </div>
               ))}
             </div>
