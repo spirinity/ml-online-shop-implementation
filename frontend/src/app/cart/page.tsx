@@ -1,7 +1,8 @@
 "use client";
 
-import { Minus, PackageSearch, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { CalendarDays, Minus, PackageSearch, Plus, RotateCcw, ShoppingBag, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { useShop } from "@/components/shop-state";
 
 function currency(value: number) {
@@ -9,6 +10,9 @@ function currency(value: number) {
 }
 
 export default function CartPage() {
+  const [today] = useState(
+    () => new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10),
+  );
   const {
     cart,
     total,
@@ -16,7 +20,11 @@ export default function CartPage() {
     error,
     result,
     simulationMode,
+    transactionType,
+    transactionDate,
     setSimulationMode,
+    setTransactionType,
+    setTransactionDate,
     updateQuantity,
     clearCart,
     checkout,
@@ -28,7 +36,9 @@ export default function CartPage() {
     { value: "planned", label: "Planned buyer history" },
     { value: "international", label: "International history" },
   ];
-  const hasPurchaseHistory = Boolean(result && result.summary.transaction_rows > 0);
+  const hasPurchaseHistory = Boolean(
+    result && (result.summary.purchase_invoice_count ?? result.summary.invoice_count) > 0,
+  );
 
   return (
     <>
@@ -110,13 +120,61 @@ export default function CartPage() {
               </select>
             </label>
           )}
+          <div className="checkout-field">
+            <span>Transaction type</span>
+            <div className="segmented-control" role="group" aria-label="Transaction type">
+              <button
+                type="button"
+                className={transactionType === "purchase" ? "active" : ""}
+                onClick={() => setTransactionType("purchase")}
+              >
+                <ShoppingBag size={15} aria-hidden="true" />
+                Purchase
+              </button>
+              <button
+                type="button"
+                className={transactionType === "cancel" ? "active" : ""}
+                onClick={() => setTransactionType("cancel")}
+                disabled={!hasPurchaseHistory}
+                title={!hasPurchaseHistory ? "Customer harus memiliki pembelian valid terlebih dahulu" : undefined}
+              >
+                <RotateCcw size={15} aria-hidden="true" />
+                Cancel
+              </button>
+            </div>
+            {!hasPurchaseHistory ? <small>Cancel tersedia setelah customer memiliki pembelian valid.</small> : null}
+          </div>
+
+          <label className="checkout-field">
+            <span>Transaction date</span>
+            <div className="date-input">
+              <CalendarDays size={16} aria-hidden="true" />
+              <input
+                type="date"
+                value={transactionDate}
+                max={today}
+                onChange={(event) => setTransactionDate(event.target.value)}
+                required
+              />
+            </div>
+          </label>
+
+          {transactionType === "cancel" ? (
+            <div className="notice">
+              Produk di cart akan dicatat sebagai pembatalan. Quantity disimpan negatif dan menambah Cancel Frequency.
+            </div>
+          ) : null}
           <div className="summary-row">
-            <span>Total</span>
+            <span>{transactionType === "cancel" ? "Cancellation value" : "Total"}</span>
             <strong>{currency(total)}</strong>
           </div>
-          <button className="btn wide" onClick={checkout} disabled={!cart.length || busy}>
+          <button className="btn wide" onClick={checkout} disabled={!cart.length || !transactionDate || busy}>
             <PackageSearch size={17} aria-hidden="true" />
-            {busy ? "Memproses..." : "Checkout & Prediksi"}
+            {busy
+              ? "Memproses..."
+              : transactionType === "cancel"
+                ? "Simpan Cancel & Prediksi"
+                : "Checkout & Prediksi"}
           </button>
           {result ? (
             <Link className="btn secondary wide" href="/segment">
