@@ -5,6 +5,7 @@ import {
   CartItem,
   CheckoutResponse,
   Product,
+  TransactionType,
   checkout as checkoutRequest,
   createSession,
   fetchProducts,
@@ -22,7 +23,11 @@ type ShopState = {
   error: string | null;
   total: number;
   simulationMode: string;
+  transactionType: TransactionType;
+  transactionDate: string;
   setSimulationMode: (mode: string) => void;
+  setTransactionType: (type: TransactionType) => void;
+  setTransactionDate: (date: string) => void;
   searchProducts: (query: string) => Promise<void>;
   addToCart: (product: Product) => void;
   updateQuantity: (productId: string, delta: number) => void;
@@ -36,6 +41,12 @@ const ShopContext = createContext<ShopState | null>(null);
 const CUSTOMER_KEY = "segment-shop-customer";
 const CART_KEY = "segment-shop-cart";
 const RESULT_KEY = "segment-shop-result";
+
+function todayInputValue() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  return new Date(now.getTime() - offset * 60_000).toISOString().slice(0, 10);
+}
 
 function readJson<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -56,6 +67,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [simulationMode, setSimulationMode] = useState("first_time");
+  const [transactionType, setTransactionType] = useState<TransactionType>("purchase");
+  const [transactionDate, setTransactionDate] = useState(todayInputValue);
 
   useEffect(() => {
     let active = true;
@@ -143,10 +156,12 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     setBusy(true);
     setError(null);
     try {
-      const response = await checkoutRequest(customerId, cart, simulationMode);
+      const response = await checkoutRequest(customerId, cart, simulationMode, transactionType, transactionDate);
       setCustomerId(response.customer_id);
       setResult(response);
       setCart([]);
+      setTransactionType("purchase");
+      setTransactionDate(todayInputValue());
       window.localStorage.setItem(CUSTOMER_KEY, response.customer_id);
       window.localStorage.setItem(RESULT_KEY, JSON.stringify(response));
     } catch (err) {
@@ -154,7 +169,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setBusy(false);
     }
-  }, [cart, customerId, simulationMode]);
+  }, [cart, customerId, simulationMode, transactionDate, transactionType]);
 
   const startNewCustomer = useCallback(async () => {
     setBusy(true);
@@ -164,6 +179,9 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       setCustomerId(session.customer_id);
       setCart([]);
       setResult(null);
+      setSimulationMode("first_time");
+      setTransactionType("purchase");
+      setTransactionDate(todayInputValue());
       window.localStorage.setItem(CUSTOMER_KEY, session.customer_id);
       window.localStorage.removeItem(CART_KEY);
       window.localStorage.removeItem(RESULT_KEY);
@@ -201,7 +219,11 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         error,
         total,
         simulationMode,
+        transactionType,
+        transactionDate,
         setSimulationMode,
+        setTransactionType,
+        setTransactionDate,
         searchProducts,
         addToCart,
         updateQuantity,
