@@ -450,6 +450,81 @@ def load_validation_artifact(output_dir: Path) -> dict[str, Any] | None:
     return validation if isinstance(validation, dict) else None
 
 
+def save_customer_dataset_artifacts(
+    valid: pd.DataFrame,
+    cancelled: pd.DataFrame,
+    bundle: ModelBundle,
+    output_dir: Path,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Persist searchable customer summaries and source transaction histories."""
+    feature_table = compute_customer_features(valid, cancelled, bundle.snapshot_date)
+    clipped = apply_clip_bounds(feature_table, bundle.clip_bounds)
+    x_scaled = bundle.scaler.transform(clipped[FEATURE_COLUMNS].values)
+    x_pca = bundle.pca.transform(x_scaled)
+    raw_labels = bundle.kmeans.predict(x_pca) + 1
+    semantic_labels = [bundle.raw_to_semantic.get(int(label), int(label)) for label in raw_labels]
+
+    valid_summary = (
+        valid.groupby("CustomerID", as_index=False)
+        .agg(
+            purchase_invoices=("InvoiceNo", "nunique"),
+            total_spend=("TotalPrice", "sum"),
+            last_purchase=("InvoiceDate", "max"),
+            country=("Country", lambda values: values.mode().iloc[0]),
+        )
+    )
+    if cancelled.empty:
+        cancel_summary = pd.DataFrame(columns=["CustomerID", "cancellation_invoices"])
+    else:
+        cancel_summary = (
+            cancelled.groupby("CustomerID", as_index=False)
+            .agg(cancellation_invoices=("InvoiceNo", "nunique"))
+        )
+
+    customer_index = (
+        feature_table[["CustomerID"]]
+        .assign(cluster=semantic_labels)
+        .merge(valid_summary, on="CustomerID", how="left")
+        .merge(cancel_summary, on="CustomerID", how="left")
+    )
+    customer_index["cancellation_invoices"] = customer_index["cancellation_invoices"].fillna(0).astype(int)
+    customer_index["purchase_invoices"] = customer_index["purchase_invoices"].fillna(0).astype(int)
+    customer_index["total_spend"] = customer_index["total_spend"].fillna(0).round(2)
+    customer_index["display_customer_id"] = customer_index["CustomerID"].str.replace(r"\.0$", "", regex=True)
+    customer_index = customer_index.rename(columns={"CustomerID": "dataset_customer_id"})
+    customer_index = customer_index.sort_values(
+        ["purchase_invoices", "total_spend"],
+        ascending=[False, False],
+    ).reset_index(drop=True)
+
+    columns = [
+        "InvoiceNo",
+        "StockCode",
+        "Description",
+        "Quantity",
+        "InvoiceDate",
+        "UnitPrice",
+        "CustomerID",
+        "Country",
+    ]
+    customer_transactions = pd.concat(
+        [valid[columns], cancelled[columns]],
+        ignore_index=True,
+    ).sort_values(["CustomerID", "InvoiceDate", "InvoiceNo"])
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    customer_index.to_csv(output_dir / "customer_index.csv", index=False)
+    joblib.dump(customer_transactions, output_dir / "customer_transactions.joblib", compress=3)
+    return customer_index, customer_transactions
+
+
+def load_customer_dataset_artifacts(output_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    customer_index = pd.read_csv(output_dir / "customer_index.csv", dtype={"dataset_customer_id": str})
+    customer_transactions = joblib.load(output_dir / "customer_transactions.joblib")
+    customer_transactions["CustomerID"] = customer_transactions["CustomerID"].astype(str)
+    return customer_index, customer_transactions
+
+
 def make_synthetic_transactions(seed: int = RANDOM_SEED) -> pd.DataFrame:
     """Generate fallback transactions when UCI download is unavailable."""
     rng = np.random.default_rng(seed)

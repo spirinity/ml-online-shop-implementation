@@ -10,7 +10,13 @@ from pathlib import Path
 
 import pandas as pd
 
-from segmentation import clean_transactions, make_synthetic_transactions, save_artifacts, train_model_bundle
+from segmentation import (
+    clean_transactions,
+    make_synthetic_transactions,
+    save_artifacts,
+    save_customer_dataset_artifacts,
+    train_model_bundle,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -53,6 +59,7 @@ def main() -> None:
     valid, cancelled = clean_transactions(raw)
     bundle, products, profiles = train_model_bundle(valid, cancelled)
     save_artifacts(bundle, products, profiles, OUTPUT_DIR)
+    customer_index, customer_transactions = save_customer_dataset_artifacts(valid, cancelled, bundle, OUTPUT_DIR)
 
     print("[OK] Artifacts generated.")
     print(f"  source             : {source}")
@@ -60,6 +67,8 @@ def main() -> None:
     print(f"  cancelled rows     : {len(cancelled):,}")
     print(f"  products           : {len(products):,}")
     print(f"  customers          : {int(bundle.metrics['customers']):,}")
+    print(f"  customer histories : {len(customer_transactions):,} rows")
+    print(f"  customer index     : {len(customer_index):,}")
     print(f"  pca variance       : {bundle.metrics['explained_variance_6pc'] * 100:.2f}%")
     print(f"  dt best depth      : {int(bundle.metrics['decision_tree_best_depth'])}")
     print(f"  dt test accuracy   : {bundle.metrics['decision_tree_test_accuracy'] * 100:.2f}%")

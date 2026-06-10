@@ -22,6 +22,7 @@ from segmentation import (
     clean_transactions,
     compute_customer_features,
     load_artifacts,
+    load_customer_dataset_artifacts,
     load_validation_artifact,
     predict_customer_cluster,
 )
@@ -46,10 +47,13 @@ app.add_middleware(
 )
 
 sessions: dict[str, list[dict[str, Any]]] = {}
+session_metadata: dict[str, dict[str, Any]] = {}
 _bundle = None
 _products: pd.DataFrame | None = None
 _profiles: pd.DataFrame | None = None
 _validation: dict[str, Any] | None = None
+_customer_index: pd.DataFrame | None = None
+_customer_transactions: pd.DataFrame | None = None
 _load_error: str | None = None
 
 
@@ -70,17 +74,26 @@ class ResetRequest(BaseModel):
     customer_id: str | None = None
 
 
+class ExistingSessionRequest(BaseModel):
+    dataset_customer_id: str = Field(min_length=1)
+    current_customer_id: str | None = None
+
+
 def _new_customer_id() -> str:
     return f"SIM-{uuid.uuid4().hex[:8].upper()}"
 
 
 def _load() -> None:
-    global _bundle, _products, _profiles, _validation, _load_error
+    global _bundle, _products, _profiles, _validation, _customer_index, _customer_transactions, _load_error
     if _bundle is not None:
         return
     try:
         _bundle, _products, _profiles = load_artifacts(ARTIFACT_DIR)
         _validation = load_validation_artifact(ARTIFACT_DIR)
+        try:
+            _customer_index, _customer_transactions = load_customer_dataset_artifacts(ARTIFACT_DIR)
+        except FileNotFoundError:
+            _customer_index, _customer_transactions = None, None
         _load_error = None
     except Exception as exc:
         _load_error = str(exc)
@@ -106,6 +119,16 @@ def _require_validation() -> dict[str, Any]:
     return _validation
 
 
+def _require_customer_dataset() -> tuple[pd.DataFrame, pd.DataFrame]:
+    _require_ready()
+    if _customer_index is None or _customer_transactions is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer dataset artifacts are missing. Re-run `python build_artifacts.py`.",
+        )
+    return _customer_index, _customer_transactions
+
+
 def _session_summary(customer_id: str) -> dict[str, Any]:
     rows = sessions.get(customer_id, [])
     total = sum(float(row["Quantity"]) * float(row["UnitPrice"]) for row in rows if int(row["Quantity"]) > 0)
@@ -119,6 +142,7 @@ def _session_summary(customer_id: str) -> dict[str, Any]:
         "purchase_invoice_count": len(purchase_invoices),
         "cancellation_invoice_count": len(cancellation_invoices),
         "total_spend": round(total, 2),
+        "source": session_metadata.get(customer_id, {}).get("source", "simulation"),
     }
 
 
@@ -198,7 +222,10 @@ def _build_segment_response(customer_id: str, invoice_no: str | None = None, che
     if valid.empty:
         raise HTTPException(status_code=404, detail="Customer belum memiliki transaksi valid.")
 
-    snapshot_date = pd.Timestamp.utcnow().tz_localize(None) + pd.Timedelta(days=1)
+    metadata = session_metadata.get(customer_id, {})
+    snapshot_date = pd.Timestamp(
+        metadata.get("snapshot_date", pd.Timestamp.utcnow().tz_localize(None) + pd.Timedelta(days=1))
+    )
     features = compute_customer_features(valid, cancelled, snapshot_date=snapshot_date)
     customer_features = features[features["CustomerID"] == customer_id].copy()
     prediction = predict_customer_cluster(bundle, customer_features)
@@ -251,6 +278,8 @@ def health() -> dict[str, Any]:
         {"name": "products.csv", "exists": (ARTIFACT_DIR / "products.csv").exists()},
         {"name": "cluster_profiles.csv", "exists": (ARTIFACT_DIR / "cluster_profiles.csv").exists()},
         {"name": "decision_tree_validation.json", "exists": (ARTIFACT_DIR / "decision_tree_validation.json").exists()},
+        {"name": "customer_index.csv", "exists": (ARTIFACT_DIR / "customer_index.csv").exists()},
+        {"name": "customer_transactions.joblib", "exists": (ARTIFACT_DIR / "customer_transactions.joblib").exists()},
     ]
     return {
         "ready": _bundle is not None,
@@ -334,10 +363,41 @@ def products(limit: int = 60, q: str = "") -> dict[str, Any]:
     return {"products": rows}
 
 
+@app.get("/api/customers")
+def customers(limit: int = 40, q: str = "") -> dict[str, Any]:
+    customer_index, _ = _require_customer_dataset()
+    data = customer_index.copy()
+    if q:
+        term = q.strip().lower()
+        data = data[
+            data["display_customer_id"].astype(str).str.lower().str.contains(term, na=False)
+            | data["country"].astype(str).str.lower().str.contains(term, na=False)
+            | data["cluster"].astype(str).str.lower().eq(term.removeprefix("c"))
+        ]
+    data = data.head(max(1, min(limit, 100)))
+    return {
+        "customers": [
+            {
+                "dataset_customer_id": str(row["dataset_customer_id"]),
+                "display_customer_id": str(row["display_customer_id"]),
+                "country": str(row["country"]),
+                "purchase_invoices": int(row["purchase_invoices"]),
+                "cancellation_invoices": int(row["cancellation_invoices"]),
+                "total_spend": round(float(row["total_spend"]), 2),
+                "last_purchase": pd.Timestamp(row["last_purchase"]).date().isoformat(),
+                "cluster": int(row["cluster"]),
+                "cluster_label": f"C{int(row['cluster'])}",
+            }
+            for _, row in data.iterrows()
+        ]
+    }
+
+
 @app.post("/api/session/new")
 def new_session() -> dict[str, Any]:
     customer_id = _new_customer_id()
     sessions[customer_id] = []
+    session_metadata[customer_id] = {"source": "simulation"}
     return {"customer_id": customer_id, "summary": _session_summary(customer_id)}
 
 
@@ -345,9 +405,42 @@ def new_session() -> dict[str, Any]:
 def reset_session(payload: ResetRequest) -> dict[str, Any]:
     if payload.customer_id and payload.customer_id in sessions:
         sessions.pop(payload.customer_id, None)
+        session_metadata.pop(payload.customer_id, None)
     customer_id = _new_customer_id()
     sessions[customer_id] = []
+    session_metadata[customer_id] = {"source": "simulation"}
     return {"customer_id": customer_id, "summary": _session_summary(customer_id)}
+
+
+@app.post("/api/session/existing")
+def existing_session(payload: ExistingSessionRequest) -> dict[str, Any]:
+    bundle, _, _ = _require_ready()
+    customer_index, customer_transactions = _require_customer_dataset()
+    dataset_customer_id = str(payload.dataset_customer_id)
+    match = customer_index[customer_index["dataset_customer_id"].astype(str) == dataset_customer_id]
+    if match.empty:
+        raise HTTPException(status_code=404, detail=f"Dataset customer {dataset_customer_id} tidak ditemukan.")
+
+    source_rows = customer_transactions[
+        customer_transactions["CustomerID"].astype(str) == dataset_customer_id
+    ].copy()
+    if source_rows.empty:
+        raise HTTPException(status_code=404, detail="Histori transaksi customer tidak ditemukan.")
+
+    if payload.current_customer_id:
+        sessions.pop(payload.current_customer_id, None)
+        session_metadata.pop(payload.current_customer_id, None)
+
+    display_customer_id = str(match.iloc[0]["display_customer_id"])
+    customer_id = f"DATA-{display_customer_id}"
+    source_rows["CustomerID"] = customer_id
+    sessions[customer_id] = source_rows.to_dict(orient="records")
+    session_metadata[customer_id] = {
+        "source": "dataset",
+        "dataset_customer_id": dataset_customer_id,
+        "snapshot_date": bundle.snapshot_date,
+    }
+    return _build_segment_response(customer_id)
 
 
 @app.get("/api/session/{customer_id}/segment")
@@ -360,6 +453,7 @@ def checkout(payload: CheckoutRequest) -> dict[str, Any]:
     _, product_df, _ = _require_ready()
     customer_id = payload.customer_id or _new_customer_id()
     sessions.setdefault(customer_id, [])
+    session_metadata.setdefault(customer_id, {"source": "simulation"})
 
     product_lookup = product_df.set_index("ProductID")
     missing = [item.product_id for item in payload.items if item.product_id not in product_lookup.index]
@@ -406,6 +500,8 @@ def checkout(payload: CheckoutRequest) -> dict[str, Any]:
             }
         )
     sessions[customer_id].extend(new_rows)
+    latest_session_date = max(pd.Timestamp(row["InvoiceDate"]) for row in sessions[customer_id])
+    session_metadata[customer_id]["snapshot_date"] = latest_session_date + pd.Timedelta(days=1)
     return _build_segment_response(
         customer_id,
         invoice_no=invoice_no,

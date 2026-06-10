@@ -1,8 +1,18 @@
 "use client";
 
-import { CalendarDays, Minus, PackageSearch, Plus, RotateCcw, ShoppingBag, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  Minus,
+  PackageSearch,
+  Plus,
+  RotateCcw,
+  Search,
+  ShoppingBag,
+  Trash2,
+  Users,
+} from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useShop } from "@/components/shop-state";
 
 function currency(value: number) {
@@ -13,8 +23,12 @@ export default function CartPage() {
   const [today] = useState(
     () => new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10),
   );
+  const [customerSource, setCustomerSource] = useState<"simulation" | "dataset">("simulation");
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [selectedDatasetCustomer, setSelectedDatasetCustomer] = useState("");
   const {
     cart,
+    datasetCustomers,
     total,
     busy,
     error,
@@ -25,6 +39,8 @@ export default function CartPage() {
     setSimulationMode,
     setTransactionType,
     setTransactionDate,
+    searchDatasetCustomers,
+    activateExistingCustomer,
     updateQuantity,
     clearCart,
     checkout,
@@ -39,6 +55,17 @@ export default function CartPage() {
   const hasPurchaseHistory = Boolean(
     result && (result.summary.purchase_invoice_count ?? result.summary.invoice_count) > 0,
   );
+  const activeDatasetCustomerId = selectedDatasetCustomer || datasetCustomers[0]?.dataset_customer_id || "";
+  const selectedCustomer = useMemo(
+    () => datasetCustomers.find((customer) => customer.dataset_customer_id === activeDatasetCustomerId),
+    [activeDatasetCustomerId, datasetCustomers],
+  );
+
+  useEffect(() => {
+    if (customerSource === "dataset" && datasetCustomers.length === 0) {
+      void searchDatasetCustomers();
+    }
+  }, [customerSource, datasetCustomers.length, searchDatasetCustomers]);
 
   return (
     <>
@@ -104,21 +131,103 @@ export default function CartPage() {
           <span className="eyebrow">Order summary</span>
           {hasPurchaseHistory ? (
             <div className="mode-locked">
-              <span>History mode locked</span>
-              <strong>Customer ini sudah punya histori pembelian.</strong>
+              <span>{result?.summary.source === "dataset" ? "Existing dataset customer" : "History mode locked"}</span>
+              <strong>
+                {result?.summary.source === "dataset"
+                  ? `${result.customer_id} memakai histori Online Retail.`
+                  : "Customer ini sudah punya histori pembelian."}
+              </strong>
               <p>Pembelian berikutnya memakai histori yang sama. Klik Customer Baru untuk memilih skenario awal lagi.</p>
             </div>
           ) : (
-            <label className="mode-picker">
-              <span>Initial customer scenario</span>
-              <select value={simulationMode} onChange={(event) => setSimulationMode(event.target.value)}>
-                {modeOptions.map((option) => (
-                  <option value={option.value} key={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <>
+              <div className="checkout-field">
+                <span>Customer source</span>
+                <div className="segmented-control" role="group" aria-label="Customer source">
+                  <button
+                    type="button"
+                    className={customerSource === "simulation" ? "active" : ""}
+                    onClick={() => setCustomerSource("simulation")}
+                  >
+                    <ShoppingBag size={15} aria-hidden="true" />
+                    Simulation
+                  </button>
+                  <button
+                    type="button"
+                    className={customerSource === "dataset" ? "active" : ""}
+                    onClick={() => setCustomerSource("dataset")}
+                  >
+                    <Users size={15} aria-hidden="true" />
+                    Existing dataset
+                  </button>
+                </div>
+              </div>
+
+              {customerSource === "simulation" ? (
+                <label className="mode-picker">
+                  <span>Initial customer scenario</span>
+                  <select value={simulationMode} onChange={(event) => setSimulationMode(event.target.value)}>
+                    {modeOptions.map((option) => (
+                      <option value={option.value} key={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <div className="dataset-customer-picker">
+                  <label className="customer-search">
+                    <Search size={15} aria-hidden="true" />
+                    <input
+                      value={customerQuery}
+                      onChange={(event) => setCustomerQuery(event.target.value)}
+                      placeholder="CustomerID, country, atau C1-C6"
+                    />
+                    <button type="button" onClick={() => searchDatasetCustomers(customerQuery)} disabled={busy}>
+                      Cari
+                    </button>
+                  </label>
+                  <label className="mode-picker">
+                    <span>Dataset customer</span>
+                    <select
+                      value={activeDatasetCustomerId}
+                      onChange={(event) => setSelectedDatasetCustomer(event.target.value)}
+                    >
+                      {datasetCustomers.map((customer) => (
+                        <option value={customer.dataset_customer_id} key={customer.dataset_customer_id}>
+                          {customer.display_customer_id} · {customer.country} · {customer.cluster_label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {selectedCustomer ? (
+                    <div className="dataset-customer-summary">
+                      <div>
+                        <span>Purchases</span>
+                        <strong>{selectedCustomer.purchase_invoices}</strong>
+                      </div>
+                      <div>
+                        <span>Cancels</span>
+                        <strong>{selectedCustomer.cancellation_invoices}</strong>
+                      </div>
+                      <div>
+                        <span>Spend</span>
+                        <strong>{currency(selectedCustomer.total_spend)}</strong>
+                      </div>
+                    </div>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn secondary wide"
+                    onClick={() => activateExistingCustomer(activeDatasetCustomerId)}
+                    disabled={!activeDatasetCustomerId || busy}
+                  >
+                    <Users size={16} aria-hidden="true" />
+                    Gunakan Customer Dataset
+                  </button>
+                </div>
+              )}
+            </>
           )}
           <div className="checkout-field">
             <span>Transaction type</span>

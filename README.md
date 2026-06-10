@@ -34,9 +34,15 @@ Buka `http://localhost:3000`.
 
 - `GET /api/health`
 - `GET /api/products`
+- `GET /api/customers`
 - `POST /api/session/new`
+- `POST /api/session/existing`
 - `POST /api/session/reset`
 - `POST /api/checkout`
+
+`GET /api/customers` menyediakan pencarian customer dari dataset Online Retail.
+`POST /api/session/existing` mengimpor histori transaksi customer yang dipilih ke
+sesi aktif dan langsung mengembalikan hasil segmentasi historisnya.
 
 `POST /api/checkout` menerima `transaction_date` (`YYYY-MM-DD`) dan
 `transaction_type` (`purchase` atau `cancel`). Cancel hanya bisa dicatat setelah

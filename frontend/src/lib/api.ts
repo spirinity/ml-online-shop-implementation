@@ -17,13 +17,14 @@ export type SessionSummary = {
   purchase_invoice_count: number;
   cancellation_invoice_count: number;
   total_spend: number;
+  source: "simulation" | "dataset";
 };
 
 export type TransactionType = "purchase" | "cancel";
 
 export type CheckoutResponse = {
   customer_id: string;
-  invoice_no: string;
+  invoice_no: string | null;
   summary: SessionSummary;
   checkout: {
     items: number;
@@ -61,6 +62,18 @@ export type ClusterProfile = {
   proportion: number;
   dominant_features: string;
   features: Record<string, { label: string; mean: number }>;
+};
+
+export type DatasetCustomer = {
+  dataset_customer_id: string;
+  display_customer_id: string;
+  country: string;
+  purchase_invoices: number;
+  cancellation_invoices: number;
+  total_spend: number;
+  last_purchase: string;
+  cluster: number;
+  cluster_label: string;
 };
 
 export type ModelInfo = {
@@ -149,6 +162,22 @@ export async function resetSession(customerId?: string) {
   return request<{ customer_id: string; summary: SessionSummary }>("/api/session/reset", {
     method: "POST",
     body: JSON.stringify({ customer_id: customerId }),
+  });
+}
+
+export async function fetchDatasetCustomers(query = "") {
+  const params = new URLSearchParams({ limit: "40" });
+  if (query) params.set("q", query);
+  return request<{ customers: DatasetCustomer[] }>(`/api/customers?${params.toString()}`);
+}
+
+export async function selectExistingCustomer(datasetCustomerId: string, currentCustomerId?: string | null) {
+  return request<CheckoutResponse>("/api/session/existing", {
+    method: "POST",
+    body: JSON.stringify({
+      dataset_customer_id: datasetCustomerId,
+      current_customer_id: currentCustomerId || undefined,
+    }),
   });
 }
 

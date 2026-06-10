@@ -4,18 +4,22 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import {
   CartItem,
   CheckoutResponse,
+  DatasetCustomer,
   Product,
   TransactionType,
   checkout as checkoutRequest,
   createSession,
+  fetchDatasetCustomers,
   fetchProducts,
   getCurrentSegment,
   resetSession,
+  selectExistingCustomer as selectExistingCustomerRequest,
 } from "@/lib/api";
 
 type ShopState = {
   customerId: string | null;
   products: Product[];
+  datasetCustomers: DatasetCustomer[];
   cart: CartItem[];
   result: CheckoutResponse | null;
   loading: boolean;
@@ -29,6 +33,8 @@ type ShopState = {
   setTransactionType: (type: TransactionType) => void;
   setTransactionDate: (date: string) => void;
   searchProducts: (query: string) => Promise<void>;
+  searchDatasetCustomers: (query?: string) => Promise<void>;
+  activateExistingCustomer: (datasetCustomerId: string) => Promise<void>;
   addToCart: (product: Product) => void;
   updateQuantity: (productId: string, delta: number) => void;
   clearCart: () => void;
@@ -61,6 +67,7 @@ function readJson<T>(key: string, fallback: T): T {
 export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [datasetCustomers, setDatasetCustomers] = useState<DatasetCustomer[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [result, setResult] = useState<CheckoutResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -131,6 +138,37 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const searchDatasetCustomers = useCallback(async (query = "") => {
+    try {
+      const response = await fetchDatasetCustomers(query);
+      setDatasetCustomers(response.customers);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal memuat customer dataset.");
+    }
+  }, []);
+
+  const activateExistingCustomer = useCallback(
+    async (datasetCustomerId: string) => {
+      if (!datasetCustomerId) return;
+      setBusy(true);
+      setError(null);
+      try {
+        const response = await selectExistingCustomerRequest(datasetCustomerId, customerId);
+        setCustomerId(response.customer_id);
+        setResult(response);
+        setSimulationMode("first_time");
+        setTransactionType("purchase");
+        window.localStorage.setItem(CUSTOMER_KEY, response.customer_id);
+        window.localStorage.setItem(RESULT_KEY, JSON.stringify(response));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Gagal memilih customer dataset.");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [customerId],
+  );
+
   const addToCart = useCallback((product: Product) => {
     setCart((current) => {
       const existing = current.find((item) => item.product_id === product.product_id);
@@ -179,6 +217,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       setCustomerId(session.customer_id);
       setCart([]);
       setResult(null);
+      setDatasetCustomers([]);
       setSimulationMode("first_time");
       setTransactionType("purchase");
       setTransactionDate(todayInputValue());
@@ -212,6 +251,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       value={{
         customerId,
         products,
+        datasetCustomers,
         cart,
         result,
         loading,
@@ -225,6 +265,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         setTransactionType,
         setTransactionDate,
         searchProducts,
+        searchDatasetCustomers,
+        activateExistingCustomer,
         addToCart,
         updateQuantity,
         clearCart: () => setCart([]),
