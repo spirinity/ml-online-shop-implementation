@@ -38,5 +38,10 @@ Buka `http://localhost:3000`.
 - `POST /api/session/reset`
 - `POST /api/checkout`
 
+`POST /api/checkout` menerima `transaction_date` (`YYYY-MM-DD`) dan
+`transaction_type` (`purchase` atau `cancel`). Cancel hanya bisa dicatat setelah
+customer memiliki minimal satu pembelian valid dan akan menambah fitur
+`Var10`/Cancel Frequency.
+
 Histori customer disimpan in-memory di backend, jadi akan hilang saat server
 FastAPI restart.
