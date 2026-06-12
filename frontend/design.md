@@ -16,7 +16,7 @@ What makes Lovable's visual system distinctive is its opacity-driven depth model
 - Warm neutral border palette: `#eceae4` for subtle, `rgba(28,28,28,0.4)` for interactive elements
 - Full-pill radius (`9999px`) used extensively for action buttons and icon containers
 - Focus state uses `rgba(0,0,0,0.1) 0px 4px 12px` shadow for soft, warm emphasis
-- shadcn/ui + Radix UI component primitives with Tailwind CSS utility styling
+- shadcn/ui + Base UI component primitives with Tailwind CSS utility styling
 
 ## 2. Color Palette & Roles
 

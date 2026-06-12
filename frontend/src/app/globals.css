@@ -1,28 +1,69 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-/* Hallmark - pre-emit critique: P4 H4 E4 S4 R4 V4 */
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --color-cream: #f7f4ed;
-  --color-cream-deep: #eceae4;
-  --color-offwhite: #fcfbf8;
-  --color-charcoal: #1c1c1c;
-  --color-text-strong: rgba(28, 28, 28, 0.83);
-  --color-text: rgba(28, 28, 28, 0.82);
-  --color-muted: #5f5f5d;
-  --color-border: #eceae4;
-  --color-border-strong: rgba(28, 28, 28, 0.4);
-  --color-tint: rgba(28, 28, 28, 0.04);
-  --color-tint-soft: rgba(28, 28, 28, 0.03);
-  --color-ring: rgba(59, 130, 246, 0.5);
+  --ml-navy-primary: #004876;
+  --ml-white-surface: #ffffff;
+  --ml-light-blue-tint: #e5f5fc;
+  --ml-bright-blue-accent: #0194ce;
+  --ml-black-overlay: #000000;
+
+  --color-cream: var(--ml-white-surface);
+  --color-cream-deep: var(--ml-light-blue-tint);
+  --color-offwhite: var(--ml-white-surface);
+  --color-charcoal: var(--ml-navy-primary);
+  --color-text-strong: color-mix(in srgb, var(--ml-navy-primary) 92%, var(--ml-black-overlay));
+  --color-text: color-mix(in srgb, var(--ml-navy-primary) 86%, var(--ml-black-overlay));
+  --color-muted: color-mix(in srgb, var(--ml-navy-primary) 64%, var(--ml-white-surface));
+  --color-border: color-mix(in srgb, var(--ml-navy-primary) 16%, var(--ml-white-surface));
+  --color-border-strong: color-mix(in srgb, var(--ml-navy-primary) 46%, var(--ml-white-surface));
+  --color-tint: color-mix(in srgb, var(--ml-light-blue-tint) 56%, transparent);
+  --color-tint-soft: color-mix(in srgb, var(--ml-light-blue-tint) 34%, transparent);
+  --color-ring: color-mix(in srgb, var(--ml-bright-blue-accent) 72%, transparent);
   --color-warn: #8a5a1e;
   --color-danger: #9f3030;
-  --shadow-inset: rgba(255, 255, 255, 0.2) 0 0.5px 0 0 inset,
-    rgba(0, 0, 0, 0.2) 0 0 0 0.5px inset, rgba(0, 0, 0, 0.05) 0 1px 2px 0;
-  --shadow-focus: rgba(0, 0, 0, 0.1) 0 4px 12px;
-  --radius-button: 6px;
-  --radius-card: 12px;
-  --radius-container: 16px;
-  --font-sans: "Camera Plain Variable", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --shadow-inset: color-mix(in srgb, var(--ml-navy-primary) 12%, transparent) 0 0 0 1px inset;
+  --shadow-focus: color-mix(in srgb, var(--ml-bright-blue-accent) 22%, transparent) 0 4px 16px;
+  --radius-button: 30px;
+  --radius-card: 15px;
+  --radius-container: 25px;
+  --font-body: var(--font-inter), "CircularStd-Book", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --background: var(--ml-white-surface);
+  --foreground: var(--ml-navy-primary);
+  --card: var(--ml-white-surface);
+  --card-foreground: var(--ml-navy-primary);
+  --popover: var(--ml-white-surface);
+  --popover-foreground: var(--ml-navy-primary);
+  --primary: var(--ml-navy-primary);
+  --primary-foreground: var(--ml-white-surface);
+  --secondary: var(--ml-light-blue-tint);
+  --secondary-foreground: var(--ml-navy-primary);
+  --muted: var(--ml-light-blue-tint);
+  --muted-foreground: var(--color-muted);
+  --accent: var(--ml-bright-blue-accent);
+  --accent-foreground: var(--ml-white-surface);
+  --destructive: var(--color-danger);
+  --border: var(--color-border);
+  --input: var(--color-border);
+  --ring: var(--ml-bright-blue-accent);
+  --chart-1: var(--ml-navy-primary);
+  --chart-2: var(--ml-bright-blue-accent);
+  --chart-3: var(--ml-light-blue-tint);
+  --chart-4: color-mix(in srgb, var(--ml-navy-primary) 42%, var(--ml-white-surface));
+  --chart-5: color-mix(in srgb, var(--ml-bright-blue-accent) 42%, var(--ml-white-surface));
+  --radius: 1.875rem;
+  --sidebar: var(--ml-white-surface);
+  --sidebar-foreground: var(--ml-navy-primary);
+  --sidebar-primary: var(--ml-navy-primary);
+  --sidebar-primary-foreground: var(--ml-white-surface);
+  --sidebar-accent: var(--ml-light-blue-tint);
+  --sidebar-accent-foreground: var(--ml-navy-primary);
+  --sidebar-border: var(--color-border);
+  --sidebar-ring: var(--ml-bright-blue-accent);
 }
 
 html,
@@ -35,7 +76,7 @@ body {
   margin: 0;
   background: var(--color-cream);
   color: var(--color-charcoal);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
 }
 
 button,
@@ -1098,5 +1139,97 @@ input:focus-visible {
   .dataset-customer-summary > div + div {
     border-top: 1px solid var(--color-border);
     border-left: 0;
+  }
+}
+
+@theme inline {
+  --font-heading: var(--font-body);
+  --font-sans: var(--font-body);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+.dark {
+  --background: color-mix(in srgb, var(--ml-navy-primary) 82%, var(--ml-black-overlay));
+  --foreground: var(--ml-white-surface);
+  --card: color-mix(in srgb, var(--ml-navy-primary) 74%, var(--ml-black-overlay));
+  --card-foreground: var(--ml-white-surface);
+  --popover: color-mix(in srgb, var(--ml-navy-primary) 74%, var(--ml-black-overlay));
+  --popover-foreground: var(--ml-white-surface);
+  --primary: var(--ml-white-surface);
+  --primary-foreground: var(--ml-navy-primary);
+  --secondary: color-mix(in srgb, var(--ml-white-surface) 12%, transparent);
+  --secondary-foreground: var(--ml-white-surface);
+  --muted: color-mix(in srgb, var(--ml-white-surface) 12%, transparent);
+  --muted-foreground: color-mix(in srgb, var(--ml-white-surface) 70%, transparent);
+  --accent: var(--ml-bright-blue-accent);
+  --accent-foreground: var(--ml-white-surface);
+  --destructive: #ffb4a8;
+  --border: color-mix(in srgb, var(--ml-white-surface) 16%, transparent);
+  --input: color-mix(in srgb, var(--ml-white-surface) 18%, transparent);
+  --ring: var(--ml-bright-blue-accent);
+  --chart-1: var(--ml-white-surface);
+  --chart-2: var(--ml-bright-blue-accent);
+  --chart-3: var(--ml-light-blue-tint);
+  --chart-4: color-mix(in srgb, var(--ml-white-surface) 48%, transparent);
+  --chart-5: color-mix(in srgb, var(--ml-bright-blue-accent) 58%, transparent);
+  --sidebar: color-mix(in srgb, var(--ml-navy-primary) 78%, var(--ml-black-overlay));
+  --sidebar-foreground: var(--ml-white-surface);
+  --sidebar-primary: var(--ml-white-surface);
+  --sidebar-primary-foreground: var(--ml-navy-primary);
+  --sidebar-accent: color-mix(in srgb, var(--ml-white-surface) 12%, transparent);
+  --sidebar-accent-foreground: var(--ml-white-surface);
+  --sidebar-border: color-mix(in srgb, var(--ml-white-surface) 16%, transparent);
+  --sidebar-ring: var(--ml-bright-blue-accent);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  html {
+    @apply font-sans;
   }
 }
