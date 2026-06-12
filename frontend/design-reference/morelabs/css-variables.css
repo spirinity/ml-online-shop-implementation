@@ -1,0 +1,64 @@
+:root {
+  /* Colors */
+  --color-navy-primary: #004876;
+  --color-white-surface: #ffffff;
+  --color-light-blue-tint: #e5f5fc;
+  --color-bright-blue-accent: #0194ce;
+  --color-black-overlay: #000000;
+
+  /* Typography */
+  --font-hero-heading-family: CircularStd-Book;
+  --font-hero-heading-size: 55.44px;
+  --font-hero-heading-weight: 400;
+  --font-hero-heading-line-height: 1.2;
+  --font-section-heading-family: CircularStd-Book;
+  --font-section-heading-size: 36.8px;
+  --font-section-heading-weight: 400;
+  --font-section-heading-line-height: 44.16px;
+  --font-sub-heading-family: CircularStd-Book;
+  --font-sub-heading-size: 24.84px;
+  --font-sub-heading-weight: 400;
+  --font-sub-heading-line-height: 37.26px;
+  --font-body-regular-family: CircularStd-Book;
+  --font-body-regular-size: 16px;
+  --font-body-regular-weight: 400;
+  --font-body-regular-line-height: 24px;
+  --font-body-bold-family: CircularStd-Bold;
+  --font-body-bold-size: 16px;
+  --font-body-bold-weight: 400;
+  --font-body-bold-line-height: 25.6px;
+  --font-small-label-family: CircularStd-Bold;
+  --font-small-label-size: 14px;
+  --font-small-label-weight: 400;
+  --font-small-label-line-height: 22px;
+  --font-nav-item-family: CircularStd-Book;
+  --font-nav-item-size: 15px;
+  --font-nav-item-weight: 400;
+  --font-nav-item-line-height: 22.5px;
+  --font-medium-label-family: CircularStd-Medium;
+  --font-medium-label-size: 14px;
+  --font-medium-label-weight: 400;
+  --font-medium-label-line-height: 16.8px;
+
+  /* Spacing */
+  --spacing-xs: 5px;
+  --spacing-sm: 8px;
+  --spacing-md-sm: 10px;
+  --spacing-md: 15px;
+  --spacing-md-lg: 18px;
+  --spacing-lg: 20px;
+  --spacing-xl: 25px;
+  --spacing-2xl: 30px;
+  --spacing-3xl: 40px;
+  --spacing-4xl: 45px;
+  --spacing-5xl: 50px;
+  --spacing-6xl: 100px;
+
+  /* Border Radius */
+  --radius-pill: 30px;
+  --radius-large-pill: 25px;
+  --radius-circle: 170px;
+  --radius-subtle: 3px;
+  --radius-small: 15px;
+
+}

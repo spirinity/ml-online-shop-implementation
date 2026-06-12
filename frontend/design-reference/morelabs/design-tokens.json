@@ -1,0 +1,191 @@
+{
+    "color":  {
+                  "Navy Primary":  {
+                                       "$type":  "color",
+                                       "$value":  "#004876",
+                                       "$description":  "All headings, body text, borders, button fills, links, and brand accents site-wide"
+                                   },
+                  "White Surface":  {
+                                        "$type":  "color",
+                                        "$value":  "#ffffff",
+                                        "$description":  "Page background, card surfaces, secondary button fill, input backgrounds"
+                                    },
+                  "Light Blue Tint":  {
+                                          "$type":  "color",
+                                          "$value":  "#e5f5fc",
+                                          "$description":  "Subtle section background tint, tag/badge surfaces"
+                                      },
+                  "Bright Blue Accent":  {
+                                             "$type":  "color",
+                                             "$value":  "#0194ce",
+                                             "$description":  "Savings tag, highlight accent"
+                                         },
+                  "Black Overlay":  {
+                                        "$type":  "color",
+                                        "$value":  "#000000",
+                                        "$description":  "Overlay/scrim layer for modals and drawers"
+                                    }
+              },
+    "typography":  {
+                       "Hero Heading":  {
+                                            "$type":  "typography",
+                                            "$value":  {
+                                                           "fontFamily":  "CircularStd-Book",
+                                                           "fontSize":  "55.44px",
+                                                           "fontWeight":  400,
+                                                           "lineHeight":  "1.2",
+                                                           "letterSpacing":  "normal"
+                                                       },
+                                            "$description":  "Primary hero/slide heading (h1)"
+                                        },
+                       "Section Heading":  {
+                                               "$type":  "typography",
+                                               "$value":  {
+                                                              "fontFamily":  "CircularStd-Book",
+                                                              "fontSize":  "36.8px",
+                                                              "fontWeight":  400,
+                                                              "lineHeight":  "44.16px",
+                                                              "letterSpacing":  "normal"
+                                                          },
+                                               "$description":  "Section-level h2/h3 headings"
+                                           },
+                       "Sub-heading":  {
+                                           "$type":  "typography",
+                                           "$value":  {
+                                                          "fontFamily":  "CircularStd-Book",
+                                                          "fontSize":  "24.84px",
+                                                          "fontWeight":  400,
+                                                          "lineHeight":  "37.26px",
+                                                          "letterSpacing":  "normal"
+                                                      },
+                                           "$description":  "Slide sub-headings, callout text"
+                                       },
+                       "Body Regular":  {
+                                            "$type":  "typography",
+                                            "$value":  {
+                                                           "fontFamily":  "CircularStd-Book",
+                                                           "fontSize":  "16px",
+                                                           "fontWeight":  400,
+                                                           "lineHeight":  "24px",
+                                                           "letterSpacing":  "normal"
+                                                       },
+                                            "$description":  "Primary body copy, descriptions"
+                                        },
+                       "Body Bold":  {
+                                         "$type":  "typography",
+                                         "$value":  {
+                                                        "fontFamily":  "CircularStd-Bold",
+                                                        "fontSize":  "16px",
+                                                        "fontWeight":  400,
+                                                        "lineHeight":  "25.6px",
+                                                        "letterSpacing":  "normal"
+                                                    },
+                                         "$description":  "Emphasized body text, labels, nav items"
+                                     },
+                       "Small Label":  {
+                                           "$type":  "typography",
+                                           "$value":  {
+                                                          "fontFamily":  "CircularStd-Bold",
+                                                          "fontSize":  "14px",
+                                                          "fontWeight":  400,
+                                                          "lineHeight":  "22px",
+                                                          "letterSpacing":  "normal"
+                                                      },
+                                           "$description":  "Button labels, small UI labels"
+                                       },
+                       "Nav Item":  {
+                                        "$type":  "typography",
+                                        "$value":  {
+                                                       "fontFamily":  "CircularStd-Book",
+                                                       "fontSize":  "15px",
+                                                       "fontWeight":  400,
+                                                       "lineHeight":  "22.5px",
+                                                       "letterSpacing":  "normal"
+                                                   },
+                                        "$description":  "Navigation menu items"
+                                    },
+                       "Medium Label":  {
+                                            "$type":  "typography",
+                                            "$value":  {
+                                                           "fontFamily":  "CircularStd-Medium",
+                                                           "fontSize":  "14px",
+                                                           "fontWeight":  400,
+                                                           "lineHeight":  "16.8px",
+                                                           "letterSpacing":  "normal"
+                                                       },
+                                            "$description":  "Tag labels, badge text, secondary UI labels"
+                                        }
+                   },
+    "spacing":  {
+                    "xs":  {
+                               "$type":  "dimension",
+                               "$value":  "5px"
+                           },
+                    "sm":  {
+                               "$type":  "dimension",
+                               "$value":  "8px"
+                           },
+                    "md-sm":  {
+                                  "$type":  "dimension",
+                                  "$value":  "10px"
+                              },
+                    "md":  {
+                               "$type":  "dimension",
+                               "$value":  "15px"
+                           },
+                    "md-lg":  {
+                                  "$type":  "dimension",
+                                  "$value":  "18px"
+                              },
+                    "lg":  {
+                               "$type":  "dimension",
+                               "$value":  "20px"
+                           },
+                    "xl":  {
+                               "$type":  "dimension",
+                               "$value":  "25px"
+                           },
+                    "2xl":  {
+                                "$type":  "dimension",
+                                "$value":  "30px"
+                            },
+                    "3xl":  {
+                                "$type":  "dimension",
+                                "$value":  "40px"
+                            },
+                    "4xl":  {
+                                "$type":  "dimension",
+                                "$value":  "45px"
+                            },
+                    "5xl":  {
+                                "$type":  "dimension",
+                                "$value":  "50px"
+                            },
+                    "6xl":  {
+                                "$type":  "dimension",
+                                "$value":  "100px"
+                            }
+                },
+    "borderRadius":  {
+                         "pill":  {
+                                      "$type":  "dimension",
+                                      "$value":  "30px"
+                                  },
+                         "large-pill":  {
+                                            "$type":  "dimension",
+                                            "$value":  "25px"
+                                        },
+                         "circle":  {
+                                        "$type":  "dimension",
+                                        "$value":  "170px"
+                                    },
+                         "subtle":  {
+                                        "$type":  "dimension",
+                                        "$value":  "3px"
+                                    },
+                         "small":  {
+                                       "$type":  "dimension",
+                                       "$value":  "15px"
+                                   }
+                     }
+}
