@@ -30,6 +30,21 @@ npm run dev
 
 Buka `http://localhost:3000`.
 
+## Menjalankan di Windows
+
+Jika dependency sudah terpasang, jalankan backend dan frontend sekaligus:
+
+```bat
+scripts\run_all.bat
+```
+
+Atau jalankan terpisah:
+
+```bat
+scripts\run_backend.bat
+scripts\run_frontend.bat
+```
+
 ## API
 
 - `GET /api/health`
