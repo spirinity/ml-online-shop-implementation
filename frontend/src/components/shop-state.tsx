@@ -15,6 +15,7 @@ import {
   resetSession,
   selectExistingCustomer as selectExistingCustomerRequest,
 } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
 
 type ShopState = {
   customerId: string | null;
@@ -38,6 +39,7 @@ type ShopState = {
   addToCart: (product: Product) => void;
   updateQuantity: (productId: string, delta: number) => void;
   clearCart: () => void;
+  clearError: () => void;
   checkout: () => Promise<void>;
   startNewCustomer: () => Promise<void>;
   refreshSegment: () => Promise<void>;
@@ -65,6 +67,7 @@ function readJson<T>(key: string, fallback: T): T {
 }
 
 export function ShopProvider({ children }: { children: React.ReactNode }) {
+  const toast = useToast();
   const [customerId, setCustomerId] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [datasetCustomers, setDatasetCustomers] = useState<DatasetCustomer[]>([]);
@@ -160,13 +163,16 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         setTransactionType("purchase");
         window.localStorage.setItem(CUSTOMER_KEY, response.customer_id);
         window.localStorage.setItem(RESULT_KEY, JSON.stringify(response));
+        toast.success("Customer dataset aktif", `${response.customer_id} - ${response.segment.cluster_label}`);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memilih customer dataset.");
+        const message = err instanceof Error ? err.message : "Gagal memilih customer dataset.";
+        setError(message);
+        toast.error("Gagal memilih customer", message);
       } finally {
         setBusy(false);
       }
     },
-    [customerId],
+    [customerId, toast],
   );
 
   const addToCart = useCallback((product: Product) => {
@@ -179,7 +185,8 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       }
       return [...current, { ...product, quantity: 1 }];
     });
-  }, []);
+    toast.success("Ditambahkan ke cart", product.description);
+  }, [toast]);
 
   const updateQuantity = useCallback((productId: string, delta: number) => {
     setCart((current) =>
@@ -202,12 +209,18 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       setTransactionDate(todayInputValue());
       window.localStorage.setItem(CUSTOMER_KEY, response.customer_id);
       window.localStorage.setItem(RESULT_KEY, JSON.stringify(response));
+      toast.success(
+        transactionType === "cancel" ? "Pembatalan tersimpan" : "Checkout berhasil",
+        `Segment terbaru: ${response.segment.cluster_label} - ${response.segment.profile}`,
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout gagal.");
+      const message = err instanceof Error ? err.message : "Checkout gagal.";
+      setError(message);
+      toast.error("Checkout gagal", message);
     } finally {
       setBusy(false);
     }
-  }, [cart, customerId, simulationMode, transactionDate, transactionType]);
+  }, [cart, customerId, simulationMode, transactionDate, transactionType, toast]);
 
   const startNewCustomer = useCallback(async () => {
     setBusy(true);
@@ -224,12 +237,15 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       window.localStorage.setItem(CUSTOMER_KEY, session.customer_id);
       window.localStorage.removeItem(CART_KEY);
       window.localStorage.removeItem(RESULT_KEY);
+      toast.success("Customer baru dibuat", session.customer_id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Reset customer gagal.");
+      const message = err instanceof Error ? err.message : "Reset customer gagal.";
+      setError(message);
+      toast.error("Reset gagal", message);
     } finally {
       setBusy(false);
     }
-  }, [customerId]);
+  }, [customerId, toast]);
 
   const refreshSegment = useCallback(async () => {
     if (!customerId) return;
@@ -270,6 +286,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         addToCart,
         updateQuantity,
         clearCart: () => setCart([]),
+        clearError: () => setError(null),
         checkout,
         startNewCustomer,
         refreshSegment,
