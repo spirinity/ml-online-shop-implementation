@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsIndicator } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
+import { ProductVisual } from "@/components/product-visual";
 import { useShop } from "@/components/shop-state";
 import { cn } from "@/lib/utils";
 
@@ -160,10 +161,15 @@ export default function CartPage() {
                     className="grid gap-4 p-4 transition-colors hover:bg-secondary/30 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
                     key={item.product_id}
                   >
-                    <div className="min-w-0">
-                      <span className="font-mono text-xs font-semibold text-muted-foreground">{item.stock_code}</span>
-                      <h3 className="mt-1 text-base font-semibold leading-snug text-primary">{item.description}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">{currency(item.unit_price)} per item</p>
+                    <div className="flex min-w-0 gap-3">
+                      <div className="relative size-16 shrink-0 overflow-hidden rounded-[var(--radius-card)] bg-secondary">
+                        <ProductVisual stockCode={item.stock_code} description={item.description} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-mono text-xs font-semibold text-muted-foreground">{item.stock_code}</span>
+                        <h3 className="mt-1 text-base font-semibold leading-snug text-primary">{item.description}</h3>
+                        <p className="mt-1 text-sm text-muted-foreground">{currency(item.unit_price)} per item</p>
+                      </div>
                     </div>
                     <div className="flex w-fit items-center gap-2 rounded-full border border-border bg-secondary/45 p-1">
                       <Button

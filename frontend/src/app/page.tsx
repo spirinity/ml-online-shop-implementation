@@ -1,15 +1,24 @@
 "use client";
 
-import { ArrowRight, Package, Plus, Search, ShoppingCart } from "lucide-react";
+import { ArrowRight, GraduationCap, Package, Plus, Search, SlidersHorizontal, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
+import { ProductVisual } from "@/components/product-visual";
 import { useShop } from "@/components/shop-state";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { COURSE, PAPER } from "@/lib/project-info";
 import { cn } from "@/lib/utils";
 
 function currency(value: number) {
@@ -37,9 +46,28 @@ function tileGradient(seed: string) {
   return TILE_GRADIENTS[hash % TILE_GRADIENTS.length];
 }
 
+type SortKey = "relevance" | "price-asc" | "price-desc" | "popular";
+type PriceTier = "all" | "under-2" | "2-5" | "over-5";
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "relevance", label: "Paling relevan" },
+  { value: "price-asc", label: "Harga: rendah ke tinggi" },
+  { value: "price-desc", label: "Harga: tinggi ke rendah" },
+  { value: "popular", label: "Paling laris" },
+];
+
+const PRICE_TIERS: { value: PriceTier; label: string }[] = [
+  { value: "all", label: "Semua harga" },
+  { value: "under-2", label: "< £2" },
+  { value: "2-5", label: "£2 – £5" },
+  { value: "over-5", label: "> £5" },
+];
+
 export default function CatalogPage() {
   const { products, loading, error, cart, addToCart, searchProducts, clearError } = useShop();
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("relevance");
+  const [priceTier, setPriceTier] = useState<PriceTier>("all");
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -49,6 +77,39 @@ export default function CatalogPage() {
   }, [query, searchProducts]);
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const visibleProducts = useMemo(() => {
+    const inTier = (price: number) => {
+      switch (priceTier) {
+        case "under-2":
+          return price < 2;
+        case "2-5":
+          return price >= 2 && price <= 5;
+        case "over-5":
+          return price > 5;
+        default:
+          return true;
+      }
+    };
+    const filtered = products.filter((product) => inTier(product.unit_price));
+    const sorted = [...filtered];
+    switch (sort) {
+      case "price-asc":
+        sorted.sort((a, b) => a.unit_price - b.unit_price);
+        break;
+      case "price-desc":
+        sorted.sort((a, b) => b.unit_price - a.unit_price);
+        break;
+      case "popular":
+        sorted.sort((a, b) => b.orders - a.orders);
+        break;
+      default:
+        break;
+    }
+    return sorted;
+  }, [products, priceTier, sort]);
+
+  const filtersActive = sort !== "relevance" || priceTier !== "all";
   const showSkeletons = loading && products.length === 0;
 
   return (
@@ -71,10 +132,27 @@ export default function CatalogPage() {
         }
       />
 
+      <div className="flex items-start gap-3 rounded-[var(--radius-card)] border border-accent/25 bg-accent/5 px-4 py-3">
+        <GraduationCap className="mt-0.5 size-5 shrink-0 text-accent" aria-hidden="true" />
+        <p className="text-sm leading-6 text-muted-foreground">
+          Demo interaktif untuk tugas mata kuliah <strong className="font-semibold text-primary">{COURSE.name}</strong>{" "}
+          ({COURSE.group}) — reimplementasi paper{" "}
+          <a
+            href={PAPER.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-accent underline-offset-4 hover:underline"
+          >
+            Wang ({PAPER.year})
+          </a>{" "}
+          tentang segmentasi pelanggan dengan K-Means + PCA. Klik ikon info di header untuk detail & anggota kelompok.
+        </p>
+      </div>
+
       <ErrorAlert message={error} onDismiss={clearError} />
 
-      <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <label className="relative block w-full sm:max-w-xl">
+      <section className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <label className="relative block w-full lg:max-w-md">
           <Search
             className="pointer-events-none absolute left-5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden="true"
@@ -87,11 +165,54 @@ export default function CatalogPage() {
             aria-label="Cari produk"
           />
         </label>
-        <span className="inline-flex items-center gap-2 self-start rounded-full bg-secondary/60 px-3 py-1.5 text-sm font-medium text-muted-foreground sm:self-auto">
-          <span className="size-2 rounded-full bg-accent" aria-hidden="true" />
-          {loading ? "Memuat katalog..." : `${products.length} produk tersedia`}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="hidden items-center gap-1.5 text-sm text-muted-foreground sm:inline-flex">
+            <SlidersHorizontal size={15} aria-hidden="true" />
+            Filter
+          </span>
+          <Select items={PRICE_TIERS} value={priceTier} onValueChange={(value) => value && setPriceTier(value as PriceTier)}>
+            <SelectTrigger className="!h-11 rounded-full bg-card px-4" aria-label="Filter harga">
+              <SelectValue placeholder="Harga" />
+            </SelectTrigger>
+            <SelectContent>
+              {PRICE_TIERS.map((tier) => (
+                <SelectItem value={tier.value} key={tier.value}>
+                  {tier.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select items={SORT_OPTIONS} value={sort} onValueChange={(value) => value && setSort(value as SortKey)}>
+            <SelectTrigger className="!h-11 rounded-full bg-card px-4" aria-label="Urutkan produk">
+              <SelectValue placeholder="Urutkan" />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem value={option.value} key={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filtersActive ? (
+            <Button
+              variant="ghost"
+              className="h-11 rounded-full px-3 text-sm text-muted-foreground"
+              onClick={() => {
+                setSort("relevance");
+                setPriceTier("all");
+              }}
+            >
+              Reset
+            </Button>
+          ) : null}
+        </div>
       </section>
+
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span className="size-2 rounded-full bg-accent" aria-hidden="true" />
+        {loading ? "Memuat katalog..." : `${visibleProducts.length} dari ${products.length} produk`}
+      </div>
 
       <section className="grid grid-cols-2 gap-x-5 gap-y-8 lg:grid-cols-3 2xl:grid-cols-4 motion-stagger">
         {showSkeletons
@@ -102,7 +223,7 @@ export default function CatalogPage() {
                 <Skeleton className="h-4 w-1/3" />
               </div>
             ))
-          : products.map((product) => (
+          : visibleProducts.map((product) => (
               <article className="group flex flex-col" key={product.product_id}>
                 <div
                   className={cn(
@@ -110,10 +231,12 @@ export default function CatalogPage() {
                     tileGradient(product.product_id),
                   )}
                 >
-                  <Package
-                    className="size-16 text-primary/30 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
-                    aria-hidden="true"
+                  <ProductVisual
+                    stockCode={product.stock_code}
+                    description={product.description}
+                    className="absolute inset-0 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/20 via-transparent to-transparent opacity-80" />
                   <Badge className="absolute left-3 top-3 rounded-full bg-background/85 font-mono text-[0.68rem] text-primary backdrop-blur-sm">
                     {product.stock_code}
                   </Badge>
@@ -139,6 +262,22 @@ export default function CatalogPage() {
                 </div>
               </article>
             ))}
+        {!showSkeletons && visibleProducts.length === 0 ? (
+          <div className="col-span-full flex flex-col items-center justify-center gap-3 rounded-[var(--radius-container)] border border-dashed border-border py-16 text-center">
+            <Package className="size-10 text-muted-foreground" aria-hidden="true" />
+            <p className="text-sm text-muted-foreground">Tidak ada produk yang cocok dengan filter ini.</p>
+            <Button
+              variant="outline"
+              className="h-10 rounded-full px-4"
+              onClick={() => {
+                setSort("relevance");
+                setPriceTier("all");
+              }}
+            >
+              Reset filter
+            </Button>
+          </div>
+        ) : null}
       </section>
     </div>
   );
