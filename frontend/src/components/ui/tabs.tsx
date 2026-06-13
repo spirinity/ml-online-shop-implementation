@@ -53,6 +53,25 @@ function TabsList({
   )
 }
 
+/**
+ * Sliding "moving island" highlight that animates to the active tab.
+ * Place inside <TabsList> as a sibling of the triggers.
+ */
+function TabsIndicator({ className, ...props }: TabsPrimitive.Indicator.Props) {
+  return (
+    <TabsPrimitive.Indicator
+      data-slot="tabs-indicator"
+      renderBeforeHydration
+      className={cn(
+        "absolute left-0 top-0 z-0 h-(--active-tab-height) w-(--active-tab-width) rounded-full bg-primary shadow-sm",
+        "[transform:translate(var(--active-tab-left),var(--active-tab-top))] transition-[transform,width,height] duration-[450ms] ease-[cubic-bezier(0.34,1.4,0.5,1)]",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
 function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
@@ -79,4 +98,4 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   )
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }
+export { Tabs, TabsList, TabsTrigger, TabsContent, TabsIndicator, tabsListVariants }
