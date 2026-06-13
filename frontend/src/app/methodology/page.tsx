@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ModelInfo, ValidationMetrics, fetchModelInfo, fetchValidation } from "@/lib/api";
+import { PageHeader } from "@/components/page-header";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { ModelInfo, ValidationMetrics } from "@/lib/api";
+import { fetchModelInfo, fetchValidation } from "@/lib/api";
 
 const steps = [
   ["Raw transaction data", "Online Retail.xlsx dengan invoice, product, quantity, price, customer, country."],
@@ -44,175 +56,190 @@ export default function MethodologyPage() {
     : 1;
 
   return (
-    <>
-      <header className="page-hero">
-        <div>
-          <span className="eyebrow">Methodology</span>
-          <h1>Pipeline model dari transaksi ke segmentasi.</h1>
-          <p>
-            Halaman ini menjelaskan alur ML yang dipakai aplikasi. Implementasi deployment mengikuti pipeline notebook,
-            dengan catatan bahwa model saat ini memakai KMeans baseline, belum full K-means-QLDE.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Methodology"
+        title="Pipeline model dari transaksi ke segmentasi."
+        description="Halaman ini menjelaskan alur ML yang dipakai aplikasi. Implementasi deployment mengikuti pipeline notebook, dengan catatan bahwa model saat ini memakai KMeans baseline, belum full K-means-QLDE."
+      />
 
-      {error ? <div className="notice error">{error}</div> : null}
+      {error ? (
+        <Alert className="border-destructive/25 bg-destructive/10 text-destructive" variant="destructive">
+          <AlertDescription className="text-destructive">{error}</AlertDescription>
+        </Alert>
+      ) : null}
 
       {info ? (
-        <section className="metric-strip">
-          <div>
-            <span>Dataset</span>
-            <strong>{info.dataset}</strong>
-          </div>
-          <div>
-            <span>Customers</span>
-            <strong>{info.customers.toLocaleString("id-ID")}</strong>
-          </div>
-          <div>
-            <span>Products</span>
-            <strong>{info.products.toLocaleString("id-ID")}</strong>
-          </div>
-          <div>
-            <span>PCA variance</span>
-            <strong>{Math.round(info.pca_variance * 10000) / 100}%</strong>
-          </div>
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            ["Dataset", info.dataset],
+            ["Customers", info.customers.toLocaleString("id-ID")],
+            ["Products", info.products.toLocaleString("id-ID")],
+            ["PCA variance", `${Math.round(info.pca_variance * 10000) / 100}%`],
+          ].map(([label, value]) => (
+            <Card className="rounded-[var(--radius-card)] border-border shadow-none" key={label} size="sm">
+              <CardContent>
+                <span className="text-sm text-muted-foreground">{label}</span>
+                <strong className="mt-2 block break-words text-2xl font-semibold text-primary">{value}</strong>
+              </CardContent>
+            </Card>
+          ))}
         </section>
       ) : null}
 
-      <section className="method-flow">
+      <section className="grid gap-3">
         {steps.map(([title, body], index) => (
-          <article className="method-step" key={title}>
-            <span>{String(index + 1).padStart(2, "0")}</span>
-            <div>
-              <h2>{title}</h2>
-              <p>{body}</p>
-            </div>
-          </article>
+          <Card className="rounded-[var(--radius-card)] border-border shadow-none" key={title} size="sm">
+            <CardContent className="grid gap-4 sm:grid-cols-[56px_minmax(0,1fr)] sm:items-start">
+              <span className="grid size-12 place-items-center rounded-full bg-primary font-mono text-sm font-semibold text-white">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <h2 className="text-xl font-semibold leading-tight text-primary">{title}</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{body}</p>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </section>
 
-      <section className="validation-panel">
-        <div className="panel-head">
-          <div>
-            <span className="eyebrow">Validation</span>
-            <h2>Decision Tree sebagai validasi cluster.</h2>
-          </div>
-        </div>
+      <Card className="rounded-[var(--radius-card)] border-border shadow-none">
+        <CardHeader className="border-b border-border pb-4">
+          <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Validation</span>
+          <CardTitle className="text-2xl text-primary">Decision Tree sebagai validasi cluster.</CardTitle>
+        </CardHeader>
 
-        <div className="validation-body">
-          <p>
+        <CardContent className="space-y-5">
+          <p className="max-w-4xl text-sm leading-6 text-muted-foreground">
             Decision Tree di sini bukan model segmentasi utama. Ia dilatih setelah clustering untuk melihat apakah label
             C1-C6 dari PCA + KMeans punya pola supervised yang konsisten dan bisa dipelajari dari komponen PCA.
           </p>
 
-          {validationError ? <div className="notice error">{validationError}</div> : null}
+          {validationError ? (
+            <Alert className="border-destructive/25 bg-destructive/10 text-destructive" variant="destructive">
+              <AlertDescription className="text-destructive">{validationError}</AlertDescription>
+            </Alert>
+          ) : null}
 
           {validation ? (
             <>
-              <div className="metric-strip">
-                <div>
-                  <span>Train rows</span>
-                  <strong>{validation.train_size.toLocaleString("id-ID")}</strong>
-                </div>
-                <div>
-                  <span>Test rows</span>
-                  <strong>{validation.test_size.toLocaleString("id-ID")}</strong>
-                </div>
-                <div>
-                  <span>Best depth</span>
-                  <strong>{validation.tuning.best_max_depth}</strong>
-                </div>
-                <div>
-                  <span>Final test accuracy</span>
-                  <strong>{formatPct(validation.final.test_accuracy)}</strong>
-                </div>
-              </div>
-
-              <div className="validation-grid">
-                <article className="validation-card">
-                  <span className="eyebrow">Baseline</span>
-                  <h3>{validation.baseline.model}</h3>
-                  <div className="summary-row">
-                    <span>Train accuracy</span>
-                    <strong>{formatPct(validation.baseline.train_accuracy)}</strong>
+              <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {[
+                  ["Train rows", validation.train_size.toLocaleString("id-ID")],
+                  ["Test rows", validation.test_size.toLocaleString("id-ID")],
+                  ["Best depth", validation.tuning.best_max_depth],
+                  ["Final test accuracy", formatPct(validation.final.test_accuracy)],
+                ].map(([label, value]) => (
+                  <div className="rounded-[var(--radius-card)] border border-border bg-secondary/35 p-4" key={label}>
+                    <span className="text-sm text-muted-foreground">{label}</span>
+                    <strong className="mt-2 block text-2xl font-semibold text-primary">{value}</strong>
                   </div>
-                  <div className="summary-row">
-                    <span>Test accuracy</span>
-                    <strong>{formatPct(validation.baseline.test_accuracy)}</strong>
+                ))}
+              </section>
+
+              <section className="grid gap-3 lg:grid-cols-2">
+                <article className="rounded-[var(--radius-card)] border border-border bg-card p-4">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Baseline
+                  </span>
+                  <h3 className="mt-2 text-xl font-semibold text-primary">{validation.baseline.model}</h3>
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-muted-foreground">Train accuracy</span>
+                      <strong className="text-primary">{formatPct(validation.baseline.train_accuracy)}</strong>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-muted-foreground">Test accuracy</span>
+                      <strong className="text-primary">{formatPct(validation.baseline.test_accuracy)}</strong>
+                    </div>
                   </div>
                 </article>
 
-                <article className="validation-card">
-                  <span className="eyebrow">Tuned model</span>
-                  <h3>{validation.final.model}</h3>
-                  <div className="summary-row">
-                    <span>CV accuracy</span>
-                    <strong>{formatPct(validation.tuning.best_cv_accuracy)}</strong>
-                  </div>
-                  <div className="summary-row">
-                    <span>Train accuracy</span>
-                    <strong>{formatPct(validation.final.train_accuracy)}</strong>
+                <article className="rounded-[var(--radius-card)] border border-border bg-card p-4">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Tuned model
+                  </span>
+                  <h3 className="mt-2 text-xl font-semibold text-primary">{validation.final.model}</h3>
+                  <div className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-muted-foreground">CV accuracy</span>
+                      <strong className="text-primary">{formatPct(validation.tuning.best_cv_accuracy)}</strong>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-sm text-muted-foreground">Train accuracy</span>
+                      <strong className="text-primary">{formatPct(validation.final.train_accuracy)}</strong>
+                    </div>
                   </div>
                 </article>
-              </div>
+              </section>
 
-              <div className="validation-grid">
-                <article className="validation-card">
-                  <span className="eyebrow">Feature importance</span>
-                  <h3>PCA components used by Decision Tree</h3>
-                  <div className="importance-list">
+              <section className="grid gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <article className="rounded-[var(--radius-card)] border border-border bg-card p-4">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Feature importance
+                  </span>
+                  <h3 className="mt-2 text-xl font-semibold text-primary">PCA components used by Decision Tree</h3>
+                  <div className="mt-5 grid gap-3">
                     {validation.final.feature_importance.map((item) => (
-                      <div className="importance-row" key={item.feature}>
-                        <span>{item.feature}</span>
-                        <div className="bar-track">
+                      <div className="grid grid-cols-[44px_minmax(0,1fr)_64px] items-center gap-3" key={item.feature}>
+                        <span className="text-sm text-primary">{item.feature}</span>
+                        <div className="h-3 overflow-hidden rounded-full border border-border bg-secondary">
                           <div
-                            className="bar-fill charcoal"
+                            className="h-full rounded-full bg-primary"
                             style={{ width: `${Math.max(2, (item.importance / maxImportance) * 100)}%` }}
                           />
                         </div>
-                        <strong>{formatPct(item.importance)}</strong>
+                        <strong className="text-right text-sm text-primary">{formatPct(item.importance)}</strong>
                       </div>
                     ))}
                   </div>
                 </article>
 
-                <article className="validation-card">
-                  <span className="eyebrow">Confusion matrix</span>
-                  <h3>Predicted cluster vs actual cluster</h3>
-                  <div className="matrix-wrap">
-                    <table className="matrix-table">
-                      <thead>
-                        <tr>
-                          <th>Actual</th>
+                <article className="rounded-[var(--radius-card)] border border-border bg-card p-4">
+                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                    Confusion matrix
+                  </span>
+                  <h3 className="mt-2 text-xl font-semibold text-primary">Predicted cluster vs actual cluster</h3>
+                  <div className="mt-4">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Actual</TableHead>
                           {validation.final.labels.map((label) => (
-                            <th key={label}>{label}</th>
+                            <TableHead className="text-right" key={label}>
+                              {label}
+                            </TableHead>
                           ))}
-                        </tr>
-                      </thead>
-                      <tbody>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {validation.final.confusion_matrix.map((row, rowIndex) => (
-                          <tr key={validation.final.labels[rowIndex]}>
-                            <th>{validation.final.labels[rowIndex]}</th>
+                          <TableRow key={validation.final.labels[rowIndex]}>
+                            <TableHead>{validation.final.labels[rowIndex]}</TableHead>
                             {row.map((value, colIndex) => (
-                              <td key={`${rowIndex}-${colIndex}`}>{value}</td>
+                              <TableCell className="text-right" key={`${rowIndex}-${colIndex}`}>
+                                {value}
+                              </TableCell>
                             ))}
-                          </tr>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 </article>
-              </div>
+              </section>
             </>
           ) : null}
-        </div>
-      </section>
+        </CardContent>
+      </Card>
 
-      <div className="notice">
-        Untuk klaim akademik, sebutkan bahwa aplikasi ini adalah deployment/inference praktis dari pipeline notebook.
-        Full K-means-QLDE belum menjadi model inference utama; Decision Tree dipakai sebagai validasi supervised terhadap
-        label cluster.
-      </div>
-    </>
+      <Alert className="border-accent/30 bg-secondary/60">
+        <AlertDescription>
+          Untuk klaim akademik, sebutkan bahwa aplikasi ini adalah deployment/inference praktis dari pipeline notebook.
+          Full K-means-QLDE belum menjadi model inference utama; Decision Tree dipakai sebagai validasi supervised
+          terhadap label cluster.
+        </AlertDescription>
+      </Alert>
+    </div>
   );
 }
