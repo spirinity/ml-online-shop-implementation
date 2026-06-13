@@ -11,8 +11,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Customer Segmentation Shop",
-  description: "Online shop simulation for customer segmentation inference.",
+  title: "Segmenta — Customer Segmentation Playground",
+  description:
+    "Segmenta: simulasi belanja interaktif untuk segmentasi pelanggan (RFM + PCA + K-Means), reimplementasi paper Wang (2025) untuk tugas Machine Learning Kelompok 5.",
 };
 
 export default function RootLayout({

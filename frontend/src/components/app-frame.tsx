@@ -1,14 +1,17 @@
 "use client";
 
-import { Boxes, ChartPie, RefreshCcw, ShoppingCart, Store, Workflow } from "lucide-react";
+import { Boxes, ChartPie, Info, RefreshCcw, ShoppingCart, Store, Workflow } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { AboutModal } from "@/components/about-modal";
+import { Logo } from "@/components/logo";
 import { ShopProvider, useShop } from "@/components/shop-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ToastProvider } from "@/components/ui/toast";
+import { APP_NAME } from "@/lib/project-info";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -25,6 +28,7 @@ function FrameContent({ children }: { children: React.ReactNode }) {
   const { cart, customerId, result, startNewCustomer, busy } = useShop();
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [island, setIsland] = useState<{ left: number; top: number; width: number; height: number; ready: boolean }>({
     left: 0,
     top: 0,
@@ -80,16 +84,8 @@ function FrameContent({ children }: { children: React.ReactNode }) {
     <main className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-30 border-b border-border/80 bg-background/92 backdrop-blur-xl supports-[backdrop-filter]:bg-background/86">
         <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-2 px-4 py-2 sm:px-6 sm:py-3 lg:min-h-20 lg:flex-row lg:items-center lg:gap-5 lg:px-8">
-          <Link className="flex min-h-11 min-w-0 items-center gap-3 text-primary" href="/">
-            <span className="grid size-9 shrink-0 place-items-center rounded-full border-2 border-primary bg-background sm:size-10">
-              <Store size={18} aria-hidden="true" />
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-[0.7rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Customer Segmentation
-              </span>
-              <span className="block truncate text-base font-semibold leading-tight sm:text-[1.05rem]">Segment Shop</span>
-            </span>
+          <Link className="flex min-h-11 min-w-0 items-center text-primary" href="/" aria-label={`${APP_NAME} — beranda`}>
+            <Logo />
           </Link>
 
           <nav
@@ -148,7 +144,16 @@ function FrameContent({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-2 lg:w-[420px] lg:gap-3">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-2 lg:w-[460px] lg:gap-3">
+            <Button
+              className="h-full min-h-11 w-11 rounded-full px-0"
+              variant="outline"
+              onClick={() => setAboutOpen(true)}
+              aria-label="Tentang proyek"
+              title="Tentang proyek"
+            >
+              <Info size={16} aria-hidden="true" />
+            </Button>
             <div className="grid min-w-0 grid-cols-2 overflow-hidden rounded-[var(--radius-card)] border border-border bg-background">
               <div className="flex min-w-0 flex-col justify-center border-r border-border px-3 py-1.5 sm:py-2">
                 <span className="block text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
@@ -198,6 +203,8 @@ function FrameContent({ children }: { children: React.ReactNode }) {
         destructive
         onConfirm={startNewCustomer}
       />
+
+      <AboutModal open={aboutOpen} onOpenChange={setAboutOpen} />
     </main>
   );
 }
