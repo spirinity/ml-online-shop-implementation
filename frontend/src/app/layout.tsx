@@ -1,13 +1,13 @@
-import { Inter } from "next/font/google";
+import { Manrope } from "next/font/google";
 import type { Metadata } from "next";
 
 import { AppFrame } from "@/components/app-frame";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-manrope",
 });
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={cn(inter.variable)}>
+    <html lang="id" className={cn(manrope.variable)}>
       <body>
         <AppFrame>{children}</AppFrame>
       </body>
