@@ -1,0 +1,16 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Segmenta logo">
+  <g transform="translate(106.667 106.667) scale(12.4444)">
+    <!-- Cluster 1 (navy) -->
+    <circle cx="6" cy="6.5" r="2.4" fill="#004876"/>
+    <circle cx="11" cy="4.5" r="1.3" fill="#004876" fill-opacity="0.6"/>
+    <circle cx="4.5" cy="11" r="1.3" fill="#004876" fill-opacity="0.6"/>
+    <!-- Cluster 2 (accent) -->
+    <circle cx="18" cy="8" r="2.4" fill="#0194ce"/>
+    <circle cx="19.5" cy="13" r="1.3" fill="#0194ce" fill-opacity="0.7"/>
+    <circle cx="14" cy="9" r="1.3" fill="#0194ce" fill-opacity="0.7"/>
+    <!-- Cluster 3 (navy) -->
+    <circle cx="11" cy="18.5" r="2.4" fill="#004876"/>
+    <circle cx="6" cy="18" r="1.3" fill="#004876" fill-opacity="0.6"/>
+    <circle cx="16" cy="19.5" r="1.3" fill="#004876" fill-opacity="0.6"/>
+  </g>
+</svg>
