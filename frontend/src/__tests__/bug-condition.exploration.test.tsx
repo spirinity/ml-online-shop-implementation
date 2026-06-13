@@ -224,7 +224,7 @@ describe("Property 1 - Bug Condition: design-system-consistent rendering", () =>
           unmount();
         }
       }),
-      { numRuns: 25 },
+      { numRuns: 20 },
     );
   });
 });

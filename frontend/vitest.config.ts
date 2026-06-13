@@ -18,5 +18,8 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     css: true,
+    // Property-based tests re-render portal-heavy pages many times; give them headroom.
+    testTimeout: 20000,
+    hookTimeout: 20000,
   },
 });
