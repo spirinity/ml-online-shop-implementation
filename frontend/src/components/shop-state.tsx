@@ -98,14 +98,16 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
         if (storedCustomer) {
           setCustomerId(storedCustomer);
-          try {
-            const segment = await getCurrentSegment(storedCustomer);
-            if (active) {
-              setResult(segment);
-              window.localStorage.setItem(RESULT_KEY, JSON.stringify(segment));
+          if (storedResult) {
+            try {
+              const segment = await getCurrentSegment(storedCustomer);
+              if (active) {
+                setResult(segment);
+                window.localStorage.setItem(RESULT_KEY, JSON.stringify(segment));
+              }
+            } catch {
+              // Backend sessions are in-memory; keep the cached result as the last known snapshot.
             }
-          } catch {
-            // Backend sessions are in-memory; keep the cached result as the last known snapshot.
           }
         } else {
           const session = await createSession();
