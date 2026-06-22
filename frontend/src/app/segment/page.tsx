@@ -2,7 +2,6 @@
 
 import { Boxes, ChartPie, RefreshCw, Store, Workflow } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ErrorAlert } from "@/components/ui/error-alert";
 import { Badge } from "@/components/ui/badge";
@@ -43,10 +42,6 @@ function explainSegment(result: CheckoutResponse) {
 
 export default function SegmentPage() {
   const { result, busy, error, refreshSegment, clearError } = useShop();
-
-  useEffect(() => {
-    if (!result) void refreshSegment();
-  }, [refreshSegment, result]);
 
   return (
     <div className="space-y-5">
